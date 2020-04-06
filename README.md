@@ -12,6 +12,8 @@ Dentro de < Operador -> Escolha de operador -> Escolha de característica > ser�
 
 Dentro de < Equipamento -> sistema -> subsistema -> tutorial > está o redirecionamento para o respectivo vídeo, no momento um vídeo exemplo.
 
+Para reiniciar envie /stop espere pela mensagem de fim e volte a enviar /start
+
 Caminhos
 
 A próxima atualização trará:
