@@ -7,9 +7,9 @@ Created on Tue Mar 17 15:21:46 2020
 
 
 import logging
-import telebot
 
-from telegram import (InlineKeyboardMarkup, InlineKeyboardButton)
+from telegram import (InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup,
+                      ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, CallbackQueryHandler)
 
@@ -25,7 +25,7 @@ SELECIONANDO_AREA, ADD_OPERADOR, ADD_SOFTWARE, ADD_EQUIPAMENTO = map(chr, range(
 SELECIONA_OPERADOR, SELECIONA_SOFTWARE, SELECIONA_EQUIPAMENTO = map(chr, range(4,7))
 
 #Estados do segundo nivel
-INPUT_PN, SALVA_INPUT, SELECIONA_SAUDE, SELECIONA_BO_SOFT = map(chr, range(7,11))
+INPUT_PN, SALVA_INPUT, SELECIONA_QUE, SELECIONA_BO_SOFT = map(chr, range(7,11))
 
 #Estados do terceiro nivel
 (BO_BALAO, BO_GUINCHO, BO_GONDOLA, BO_CABO_EM, BO_CDG, BO_CEG, BO_BERCO_SOLO,
@@ -37,15 +37,15 @@ POWER_GON, DIAGRAMA_GON, CONECTOR_EM, PIGTAIL_FAB, PIGTAIL_REMEN, PLC_CDG, DISJU
 SWITCH_CDG, STECK, AGUA_CDG, ANCORAS, ENCAIXES, PARAFUSOS_BERCO, CINTAS, PIZZA, ENCAIXE_PIZZA,
 ACESSO_SAURON, STREAMING_SAURON, TUTORIAL_SAURON, ACESSO_HARPIA, STREAMING_HARPIA, TUTORIAL_HARPIA,
 CREDENCIAIS_HARPIA, LINK_HARPIA, ACESSO_TUPAN, LINK_TUPAN, ERRO_TUPAN, ERRO_1_GEOCAM,
-ERRO_2_GEOCAM, TUTORIAL_GEOCAM) = map(chr, range(29,69))
+ERRO_2_GEOCAM, TUTORIAL_GEOCAM, NOME_RESPONSAVEL) = map(chr, range(29,70))
 
 # Constantes
 (START_OVER, BRUNO, LEANDRO, VALDINIR, RAFAEL, BALAO, GUINCHO, GONDOLA, CDG, CEG,
  CABO_EM, BERCO_SOLO, BERCO_PIZZA, HARPIA, TUPAN, SAURON, GEOCAM, FEATURES, CURRENT_FEATURE, RESPONSAVEL,
- OPERADOR, SAUDE, ACESSO, SENHA, LOCAL) = map(chr, range(69, 94))
+ OPERADOR, SAUDE, ACESSO, SENHA, LOCAL) = map(chr, range(70, 95))
 
 # Meta states
-STOPPING, SHOWING = map(chr, range(94, 96))
+STOPPING, SHOWING = map(chr, range(95, 97))
 
 # Shortcut for ConversationHandler.END
 END = ConversationHandler.END
@@ -133,7 +133,7 @@ def seleciona_equipamento(update, context):
 
 
 
-def seleciona_saude(update, context):
+def seleciona_que(update, context):
     text = 'Selecione a situacao que deseja reportar.'
     buttons = [[
         InlineKeyboardButton(text='Mudar responsavel pela operacao', callback_data=str(RESPONSAVEL))
@@ -146,21 +146,47 @@ def seleciona_saude(update, context):
     update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
           
     
-    return SELECIONA_SAUDE
+    return SELECIONA_QUE
+
+#def entra_responsavel(update, context):
+#    user = update.message.from_user
+#    logger.info("Então %s, você quer mudar o responsável", user.first_name, update.message.text)
+#    update.message.reply_text('Entedi. Obrigada!')
+# 
+#    return MUDA_RESPONSAVEL
 #
-#def seleciona_bo_soft(update,context):
-#    text = 'Selecione a area relacionada ao seu problema'
-#    buttons = [[
-#        InlineKeyboardButton(text='Acesso', callback_data=str(ACESSO))
-#    ], [
-#        InlineKeyboardButton(text='Senha', callback_data=str(SENHA))
-#    ], [
-#        InlineKeyboardButton(text='Local', callback_data=str(LOCAL))
-#    ]]
-#    keyboard = InlineKeyboardMarkup(buttons)
-#    update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
+#def entra_operador(update, context):
+#    user = update.message.from_user
+#    logger.info("Então %s, você quer mudar o responsável", user.first_name, update.message.text)
+#    update.message.reply_text('Entedi. Obrigada!')
+# 
+#    return MUDA_OPERADOR
 #
-#    return SELECIONA_BO_SOFT
+#def entra_saude(update, context):
+#    user = update.message.from_user
+#    logger.info("Então %s, você quer mudar o responsável", user.first_name, update.message.text)
+#    update.message.reply_text('Entedi. Obrigada!')
+# 
+#    return MUDA_SAUDE
+
+
+# Terceiro nível - identificação das ocorrências com o operador
+    
+def responsavel(update, context):
+    user = update.message.from_user
+    logger.info("%s, você: escolheu mudar o responsável pela operação.", user.first_name, update.message.text)
+    update.message.reply_text('Então, me mande o nome de quem será o novo responsável pela operação',
+                              reply_markup=ReplyKeyboardRemove())
+ 
+    return NOME_RESPONSAVEL
+
+def nome_responsavel(update, context):
+    user = update.message.from_user
+    logger.info("Então %s, o nome do responsável é %s", user.first_name, update.message.text)
+    update.message.reply_text('Entedi. Obrigada!')
+ 
+    return ConversationHandler.END
+
 
 # Terceiro nível - identificação dos problemas de hardware
 
@@ -184,26 +210,6 @@ def salva_input(update, context):
 
 def problemas_balao(update, context):
     text = 'Foi onde?'
-    buttons = [[
-        InlineKeyboardButton(text='Envelope externo', callback_data=str(NYLON), url='https://www.youtube.com/watch?v=7dKQWw96kcM'),
-        InlineKeyboardButton(text='Envelope interno', callback_data=str(PU), url='https://www.youtube.com/watch?v=7dKQWw96kcM')
-    ], [
-        InlineKeyboardButton(text='Balizas', callback_data=str(BALIZA), url='https://www.youtube.com/watch?v=7dKQWw96kcM'),
-        InlineKeyboardButton(text='Deflação', callback_data=str(DEFLACAO), url='https://www.youtube.com/watch?v=7dKQWw96kcM')
-    ], [
-        InlineKeyboardButton(text='Saia', callback_data=str(SAIA), url='https://www.youtube.com/watch?v=7dKQWw96kcM'),
-        InlineKeyboardButton(text='Cordas', callback_data=str(CORDAS), url='https://www.youtube.com/watch?v=7dKQWw96kcM')
-    ]]
-    keyboard = InlineKeyboardMarkup(buttons)
-    update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
-
-    return BO_BALAO
-
-
-def tutorial_nylon(update, context):
-    text = 'Foi onde?'
-    InputFile(obj, filename=None, attach=None)
-#    InputMediaVideo(media, caption=None, width=None, height=None, duration=None, supports_streaming=None, parse_mode=<telegram.utils.helpers.DefaultValue object>, thumb=None)
     buttons = [[
         InlineKeyboardButton(text='Envelope externo', callback_data=str(NYLON), url='https://www.youtube.com/watch?v=7dKQWw96kcM'),
         InlineKeyboardButton(text='Envelope interno', callback_data=str(PU), url='https://www.youtube.com/watch?v=7dKQWw96kcM')
@@ -486,6 +492,18 @@ def main():
     
 ########################################################################################################
             
+    #Terceiro nível dos operadores
+    
+    add_situacao = ConversationHandler(
+        entry_points=[CallbackQueryHandler(responsavel, pattern='^' + str(RESPONSAVEL) + '$')],
+        states={
+            NOME_RESPONSAVEL: [MessageHandler(Filters.text, nome_responsavel)]
+        },
+        fallbacks=[CommandHandler('stop', stop)]
+    )
+#            RESPONSAVEL: [MessageHandler(Filters.text, responsavel)],
+#            NOME_RESPONSAVEL: [MessageHandler(Filters.text, nome_responsavel)]
+    
     #Set segundo nivel
 
     add_software = ConversationHandler(
@@ -493,9 +511,9 @@ def main():
 
         states={
             SELECIONA_SOFTWARE: [CallbackQueryHandler(bo_sauron, pattern='^' + str(SAURON) + '$'),
-                                CallbackQueryHandler(bo_harpia, pattern='^' + str(HARPIA) + '$'),
-                                CallbackQueryHandler(bo_tupan, pattern='^' + str(TUPAN) + '$'),
-                                CallbackQueryHandler(bo_geocam, pattern='^' + str(GEOCAM) + '$'),
+                                 CallbackQueryHandler(bo_harpia, pattern='^' + str(HARPIA) + '$'),
+                                 CallbackQueryHandler(bo_tupan, pattern='^' + str(TUPAN) + '$'),
+                                 CallbackQueryHandler(bo_geocam, pattern='^' + str(GEOCAM) + '$'),
                                  CallbackQueryHandler(end, pattern='^' + str(END) + '$')
            
             ]
@@ -528,13 +546,13 @@ def main():
         entry_points=[CallbackQueryHandler(seleciona_operador, pattern='^' + str(ADD_OPERADOR) + '$')],
 
         states={
-            SELECIONA_OPERADOR: [CallbackQueryHandler(seleciona_saude,
-                                                   pattern='^{0}$|^{1}$'.format(str(BRUNO),
+            SELECIONA_OPERADOR: [CallbackQueryHandler(seleciona_que,
+                                                        pattern='^{0}$|^{1}$'.format(str(BRUNO),
                                                                                 str(LEANDRO),
                                                                                 str(RAFAEL),
                                                                                 str(VALDINIR))),
-                                 CallbackQueryHandler(end, pattern='^' + str(END) + '$')
-            ]
+                                 CallbackQueryHandler(end, pattern='^' + str(END) + '$'),
+            ],
         },
 
         fallbacks=[CommandHandler('stop', stop)]
