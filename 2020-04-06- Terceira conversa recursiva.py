@@ -8,13 +8,14 @@ Created on Mon Apr  6 16:23:01 2020
 
 import logging
 
+from PyPDF2 import PdfFileWriter, PdfFileReader
+
 from telegram import (InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup,
                       ReplyKeyboardRemove, MessageEntity)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, CallbackQueryHandler)
 
 import Switch_escolha
-
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -43,7 +44,6 @@ STOPPING, SHOWING = map(chr, range(29, 31))
 # Shortcut for ConversationHandler.END
 END = ConversationHandler.END
 
-document = open('Procedimento_de_Purge.pdf', 'rb')
 
 def start(update, context):
     user = update.message.from_user
@@ -80,8 +80,8 @@ def selecionando_area(update, context):
     elif area == 'Software':
 
         user = update.message.from_user
-        reply_keyboard = [['Harpia', 'Tupan', 
-                       'Sauron', 'Geocam']]
+        reply_keyboard = [['Harpia', 'Tupan'],
+                ['Sauron', 'Geocam']]
     
         update.message.reply_text(
                 'Selecione entre um dos softwares desenvolvidos pela ALTAVE',
@@ -161,55 +161,141 @@ def encaminha_ajuda(update, context):
 # Encaminha problemas de software, supõe que os problemas são todos da mesma grande natureza e salva as entradas anteriores
 # Chamar o estado SELECIONA_SOFTWARE para esse estado
 
-def seleciona_software(update, context):
+def seleciona_software(update,context):
     
-    software = update.message.text
+    user = update.message.from_user
+    
+    reply_keyboard = [['Acesso', 'Streaming', 'Credenciais'],
+            ['Link de acesso', 'Debug','Outros tutoriais'],
+            ['Acusar Erro', 'Tutorial Completo', 'Adicionar tutorial']]
 
-    if software == 'Sauron':
-        user = update.message.from_user
-        reply_keyboard = [['Acesso','Streaming','Tutorial completo', 'Acusar Erro']]
-        
-        update.message.reply_text(
-            'Ajuda com o que?',
+    logger.info("%s reporta sobre %s", user.first_name, update.message.text)
+    update.message.reply_text(
+            'Então, vamos lá! Como posso te ajudar? Escolha uma das opções para obter um guia, vá em Debug para '\
+            'obter resolução para os problemas mais frequentes, Acusar erro para enviar uma mensagem pelo responsável '\
+            'Tutorial completo para obter um guia básico para usar o sistema. A função de adicionar tutorial só está disponível '\
+            'para desenvolvedores, beleza?!',
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-
-        return SAURON
-
-
-    elif software == 'Harpia':
-        user = update.message.from_user
-        reply_keyboard = [['Acesso','Streaming','Tutorial completo','Credenciais','Link de acesso']]
-
-        update.message.reply_text(
-            'Ajuda com o que?',
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-
-        return HARPIA
-        
-
-    elif software == 'Tupan':
-        user = update.message.from_user
-        reply_keyboard = [['Acesso','Link de acesso','Acusar Erro']]
-
-        update.message.reply_text(
-            'Ajuda com o que?',
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-
-        return TUPAN
-        
-
-    elif software == 'Geocam':
-        user = update.message.from_user
-        reply_keyboard = [['ERRO 1','ERRO 2','Tutorial completo']]
-
-        update.message.reply_text(
-            'Ajuda com o que?',
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-
-        return GEOCAM
-
+                
     return REDIRECIONA_SOFTWARE
 
+def redireciona_software(update,context):
+    user = update.message.from_user
+    software = update.message[-1]
+    print(software)
+    escolha = update.message.from_user
+    chat_id = update.message.chat_id
+    
+    if software == 'Sauron':
+        switcher = {
+            'Acesso': acesso_sauron,
+            'Streaming': streaming_sauron,
+            'Tutorial Completo': tutorial_completo_sauron,
+            'Acusar_Erro': acusa_erro_sauron,
+            'Outros_tutoriais': dicionario_tutoriais_sauron,
+            'Credenciais': credenciais_sauron,
+            'Link de acesso': link_sauron,
+            'Debug': debug_sauron,
+            'Adicionar tutorial': add_tutorial_sauron
+            }
+        url = {
+            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
+            }
+        return ESCOLHE_SUBAREA
+    
+    elif software == 'Harpia':
+        switcher = {
+            'Acesso': acesso_harpia,
+            'Streaming': streaming_harpia,
+            'Tutorial Completo': tutorial_completo_harpia,
+            'Acusar_Erro': acusa_erro_harpia,
+            'Outros_tutoriais': dicionario_tutoriais_harpia,
+            'Credenciais': credenciais_harpia,
+            'Link de acesso': link_harpia,
+            'Debug': debug_harpia,
+            'Adicionar tutorial': add_tutorial_harpia
+            }
+        url = {
+            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
+            }
+        return ESCOLHE_SUBAREA
+        
+    elif software == 'Tupan':
+        switcher = {
+            'Acesso': acesso_tupan,
+            'Streaming': streaming_tupan,
+            'Tutorial Completo': tutorial_completo_tupan,
+            'Acusar_Erro': acusa_erro_tupan,
+            'Outros_tutoriais': dicionario_tutoriais_tupan,
+            'Credenciais': credenciais_tupan,
+            'Link de acesso': link_tupan,
+            'Debug': debug_tupan,
+            'Adicionar tutorial': add_tutorial_tupan
+            }
+        url = {
+            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
+            }
+        return ESCOLHE_SUBAREA
+        
+        
+    elif software == 'Geocam':
+        switcher = {
+            'Acesso': acesso_geocam,
+            'Streaming': streaming_geocam,
+            'Tutorial Completo': tutorial_completo_geocam,
+            'Acusar_Erro': acusa_erro_geocam,
+            'Outros_tutoriais': dicionario_tutoriais_geocam,
+            'Credenciais': credenciais_geocam,
+            'Link de acesso': link_geocam,
+            'Debug': debug_geeocam,
+            'Adicionar tutorial': add_tutorial_geocam
+            }
+        
+        url = {
+            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
+            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
+            }
+        return ESCOLHE_SUBAREA
+        
+        context.bot.sendMessage(chat_id, 'Tá, segue um guia. Caso não tenha ajudado, digite /voltar.',
+                        parse_mode=None, disable_web_page_preview=None, disable_notification=False,
+                        reply_to_message_id=None, reply_markup=None, timeout=None)
+        
+        for escolha in switcher:
+            context.bot.send_document(chat_id, document=switcher[escolha], filename=escolha+software+'.pdf', caption='Também disponível em vídeo\n'+url[escolha],
+                                        disable_notification=False, reply_to_message_id=None,
+                                        reply_markup=None, timeout=None, parse_mode=None, thumb=None)
 
 ################################
 
@@ -255,8 +341,8 @@ def main():
                                 CommandHandler('start', start)],
             AJUDA: [MessageHandler(Filters.regex('^Tenho certeza, chama o Inaldo.|Voltar$'), digita_ajuda)],
             ENCAMINHA_AJUDA: [MessageHandler(Filters.text, encaminha_ajuda)],
-            SELECIONA_SOFTWARE: [MessageHandler(Filters.regex('^(Harpia|Tupan|Sauron|Geocam$)$'), seleciona_software)],
-            REDIRECIONA_SOFTWARE: [MessageHandler(Filters.regex('^(Acesso|Streaming|Tutorial Completo|Acusar Erro|Outros tutoriais|Credenciais|Link de acesso|Debug|Adicionar_tutorial$)$'), redireciona_software)],
+            SELECIONA_SOFTWARE: [MessageHandler(Filters.regex('^Harpia|Tupan|Sauron|Geocam$'), seleciona_software)],
+            REDIRECIONA_SOFTWARE: [MessageHandler(Filters.regex('^Acesso|Streaming|Credenciais|Link de acesso|Debug|Outros tutoriais|Acusar Erro|Tutorial Completo|Adicionar_tutorial$'), redireciona_software)],
             #VOLTA_COMECO: [CallbackQueryHandler(end, pattern='^' + str(END) + '$'),
                            #CallbackQueryHandler(start, pattern='^' + str(END) + '$')],
         },
