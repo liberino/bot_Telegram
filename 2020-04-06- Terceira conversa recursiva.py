@@ -15,7 +15,7 @@ from telegram import (InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardM
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, CallbackQueryHandler)
 
-import Switch_escolha
+from Banco_tutoriais_fixos_softwares import switcher, url
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -44,18 +44,31 @@ STOPPING, SHOWING = map(chr, range(29, 31))
 # Shortcut for ConversationHandler.END
 END = ConversationHandler.END
 
-
 def start(update, context):
     user = update.message.from_user
+    mensagem = update.message.text
     
-    reply_keyboard = [['Operacao', 'Software', 'Equipamento', 'Encaminhar registro']]
- 
-    update.message.reply_text(
-        'Olá, eu sou o assistente de operação da ALTAVE. Estou aqui para te'\
-        ' ajudar com o seu chamado. '\
-        'Por favor, escolha sobre o que você deseja reportar.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-    logger.info("%s %s abriu chamado", user.first_name, user.last_name)
+    if mensagem == '/voltar':
+        reply_keyboard = [['Operacao', 'Software', 'Equipamento', 'Encaminhar registro']]
+    
+        update.message.reply_text(
+            'Por favor, escolha sobre o que você deseja reportar. Você pode cancelar o chamado'\
+            ' a qualquer momento com /termina',
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        logger.info("%s %s abriu chamado", user.first_name, user.last_name)
+        
+    else: 
+        
+        reply_keyboard = [['Operacao', 'Software', 'Equipamento', 'Encaminhar registro']]
+        
+        update.message.reply_text(
+            'Olá, eu sou o assistente de operação da ALTAVE. Estou aqui para te'\
+            ' ajudar com o seu chamado. '\
+            'Por favor, escolha sobre o que você deseja reportar.',
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        logger.info("%s %s abriu chamado", user.first_name, user.last_name)
+        
+        
     return SELECIONANDO_AREA
 
 def selecionando_area(update, context):
@@ -144,6 +157,7 @@ def digita_ajuda(update, context):
 def encaminha_ajuda(update, context):
 
     user = update.message.from_user
+    chat_id = update.message.chat_id
     logger.info("%s %s está pedindo ajuda para o Inaldo: %s", user.first_name, user.last_name, update.message.text)
     
     
@@ -154,6 +168,11 @@ def encaminha_ajuda(update, context):
     context.bot.forwardMessage(chat_id='582892178', from_chat_id=update.message.chat_id,
                                 message_id=update.message.message_id)
     
+    context.bot.sendMessage(chat_id, 'Beleza! Enviei sua mensagem para ele. Espera um pouco que ele já entra em contato com você.',
+                    parse_mode=None, disable_web_page_preview=None, disable_notification=False,
+                    reply_to_message_id=None, reply_markup=None, timeout=None)
+    
+    logger.info("%s %s cancelou", user.first_name, user.last_name)
     
     return AJUDA_OPERACOES
 
@@ -162,14 +181,14 @@ def encaminha_ajuda(update, context):
 # Chamar o estado SELECIONA_SOFTWARE para esse estado
 
 def seleciona_software(update,context):
-    
+    software = update.message.text
     user = update.message.from_user
     
-    reply_keyboard = [['Acesso', 'Streaming', 'Credenciais'],
-            ['Link de acesso', 'Debug','Outros tutoriais'],
-            ['Acusar Erro', 'Tutorial Completo', 'Adicionar tutorial']]
+    reply_keyboard = [['Acesso '+ software, 'Streaming '+ software, 'Credenciais '+ software],
+            ['Link de acesso '+ software, 'Debug '+ software,'Outros tutoriais '+ software],
+            ['Acusar Erro '+ software, 'Tutorial Completo '+ software, 'Adicionar tutorial '+ software]]
 
-    logger.info("%s reporta sobre %s", user.first_name, update.message.text)
+    logger.info("%s reporta sobre %s", user.first_name, software)
     update.message.reply_text(
             'Então, vamos lá! Como posso te ajudar? Escolha uma das opções para obter um guia, vá em Debug para '\
             'obter resolução para os problemas mais frequentes, Acusar erro para enviar uma mensagem pelo responsável '\
@@ -181,122 +200,35 @@ def seleciona_software(update,context):
 
 def redireciona_software(update,context):
     user = update.message.from_user
-    software = update.message[-1]
-    print(software)
-    escolha = update.message.from_user
+    escolha = update.message.text
+    print(escolha)
+    
     chat_id = update.message.chat_id
+    context.bot.sendMessage(chat_id, 'Tá, vou te mandar um guia. Caso não te ajude, procure outro tutorial digitando /tutorial '\
+                    'ou se quiser voltar ao início, digite /voltar',
+                    parse_mode=None, disable_web_page_preview=None, disable_notification=False,
+                    reply_to_message_id=None, reply_markup=None, timeout=None)
     
-    if software == 'Sauron':
-        switcher = {
-            'Acesso': acesso_sauron,
-            'Streaming': streaming_sauron,
-            'Tutorial Completo': tutorial_completo_sauron,
-            'Acusar_Erro': acusa_erro_sauron,
-            'Outros_tutoriais': dicionario_tutoriais_sauron,
-            'Credenciais': credenciais_sauron,
-            'Link de acesso': link_sauron,
-            'Debug': debug_sauron,
-            'Adicionar tutorial': add_tutorial_sauron
-            }
-        url = {
-            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
-            }
-        return ESCOLHE_SUBAREA
-    
-    elif software == 'Harpia':
-        switcher = {
-            'Acesso': acesso_harpia,
-            'Streaming': streaming_harpia,
-            'Tutorial Completo': tutorial_completo_harpia,
-            'Acusar_Erro': acusa_erro_harpia,
-            'Outros_tutoriais': dicionario_tutoriais_harpia,
-            'Credenciais': credenciais_harpia,
-            'Link de acesso': link_harpia,
-            'Debug': debug_harpia,
-            'Adicionar tutorial': add_tutorial_harpia
-            }
-        url = {
-            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
-            }
-        return ESCOLHE_SUBAREA
+    #for escolha in switcher:
+    context.bot.send_document(chat_id, document=switcher[escolha], filename=escolha, caption='Também disponível em vídeo\n'+url[escolha],
+                                disable_notification=False, reply_to_message_id=None,
+                                reply_markup=None, timeout=None, parse_mode=None, thumb=None)
         
-    elif software == 'Tupan':
-        switcher = {
-            'Acesso': acesso_tupan,
-            'Streaming': streaming_tupan,
-            'Tutorial Completo': tutorial_completo_tupan,
-            'Acusar_Erro': acusa_erro_tupan,
-            'Outros_tutoriais': dicionario_tutoriais_tupan,
-            'Credenciais': credenciais_tupan,
-            'Link de acesso': link_tupan,
-            'Debug': debug_tupan,
-            'Adicionar tutorial': add_tutorial_tupan
-            }
-        url = {
-            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
-            }
-        return ESCOLHE_SUBAREA
-        
-        
-    elif software == 'Geocam':
-        switcher = {
-            'Acesso': acesso_geocam,
-            'Streaming': streaming_geocam,
-            'Tutorial Completo': tutorial_completo_geocam,
-            'Acusar_Erro': acusa_erro_geocam,
-            'Outros_tutoriais': dicionario_tutoriais_geocam,
-            'Credenciais': credenciais_geocam,
-            'Link de acesso': link_geocam,
-            'Debug': debug_geeocam,
-            'Adicionar tutorial': add_tutorial_geocam
-            }
-        
-        url = {
-            'Acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Streaming': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Tutorial Completo': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Acusar_Erro': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Outros_tutoriais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Credenciais': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Link de acesso': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Debug': 'https://www.youtube.com/watch?v=7dKQWw96kcM',
-            'Adicionar tutorial': 'https://www.youtube.com/watch?v=7dKQWw96kcM'
-            }
-        return ESCOLHE_SUBAREA
-        
-        context.bot.sendMessage(chat_id, 'Tá, segue um guia. Caso não tenha ajudado, digite /voltar.',
-                        parse_mode=None, disable_web_page_preview=None, disable_notification=False,
-                        reply_to_message_id=None, reply_markup=None, timeout=None)
-        
-        for escolha in switcher:
-            context.bot.send_document(chat_id, document=switcher[escolha], filename=escolha+software+'.pdf', caption='Também disponível em vídeo\n'+url[escolha],
-                                        disable_notification=False, reply_to_message_id=None,
-                                        reply_markup=None, timeout=None, parse_mode=None, thumb=None)
+    return ESCOLHE_SUBAREA 
 
+def volta_tutorial(update, context):
+    user = update.message.from_user
+    reply_keyboard = [['Harpia', 'Tupan'],
+            ['Sauron', 'Geocam']]
+
+    update.message.reply_text(
+            'Selecione entre um dos softwares desenvolvidos pela ALTAVE',
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+    logger.info("Chamado não resolvido. %s reporta sobre %s", user.first_name, update.message.text)
+    user = update.message.from_user
+
+    return SELECIONA_SOFTWARE
 ################################
 
 
@@ -304,14 +236,18 @@ def redireciona_software(update,context):
 
 def stop(update, context):
     """End Conversation by command."""
-    update.message.reply_text('Ta bom, tchau.')
+    user = update.message.from_user
+    update.message.reply_text('Que pena! Espero ajudar da próxima vez. Tchau.')
+    logger.info("Chamado não resolvido. %s cancelou seu chamado sobre %s", user.first_name, update.message.text)
 
     return END
 
 
 def end(update, context):
     """End conversation from InlineKeyboardButton."""
-    text = 'Te vejo por ai!'
+    user = update.message.from_user
+    text = 'Então tá bom. Te vejo por ai!'
+    logger.info("%s teve seu chamado resolvido.", user.first_name)
     update.callback_query.edit_message_text(text=text)
 
     return END
@@ -339,15 +275,20 @@ def main():
         states={
             SELECIONANDO_AREA: [MessageHandler(Filters.regex('^(Operacao|Software|Equipamento|Encaminhar registro)$'), selecionando_area),
                                 CommandHandler('start', start)],
-            AJUDA: [MessageHandler(Filters.regex('^Tenho certeza, chama o Inaldo.|Voltar$'), digita_ajuda)],
+            AJUDA: [MessageHandler(Filters.regex('^Tenho certeza, chama o Inaldo.|Voltar$'), digita_ajuda),
+                    CommandHandler('cancela', end,),
+                    CommandHandler('recomeca', start)],
             ENCAMINHA_AJUDA: [MessageHandler(Filters.text, encaminha_ajuda)],
             SELECIONA_SOFTWARE: [MessageHandler(Filters.regex('^Harpia|Tupan|Sauron|Geocam$'), seleciona_software)],
             REDIRECIONA_SOFTWARE: [MessageHandler(Filters.regex('^Acesso|Streaming|Credenciais|Link de acesso|Debug|Outros tutoriais|Acusar Erro|Tutorial Completo|Adicionar_tutorial$'), redireciona_software)],
+            ESCOLHE_SUBAREA: [CommandHandler('voltar', start),
+                              CommandHandler('tutorial', volta_tutorial)],
             #VOLTA_COMECO: [CallbackQueryHandler(end, pattern='^' + str(END) + '$'),
                            #CallbackQueryHandler(start, pattern='^' + str(END) + '$')],
         },
  
-        fallbacks=[CommandHandler('cancela', stop)]
+        fallbacks=[CommandHandler('cancela', stop),
+                   CommandHandler('terminei', end)]
     )
  
     dp.add_handler(conv_handler)
